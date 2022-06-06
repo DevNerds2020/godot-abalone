@@ -29,3 +29,21 @@ material/0 = ExtResource( 2 )
 [node name="Visualizer" type="Node" parent="."]
 script = ExtResource( 4 )
 pieces_path = NodePath("../Pieces")
+
+[node name="Button" type="Button" parent="."]
+margin_left = 926.0
+margin_top = 4.0
+margin_right = 1014.0
+margin_bottom = 55.0
+rect_scale = Vector2( 1.05951, 1.10447 )
+text = "submit"
+
+[node name="Button2" type="Button" parent="."]
+margin_left = 927.0
+margin_top = 87.0
+margin_right = 1022.0
+margin_bottom = 141.0
+text = "ai play"
+
+[connection signal="pressed" from="Button" to="Visualizer" method="_on_Button_pressed"]
+[connection signal="pressed" from="Button2" to="Visualizer" method="_on_Button2_pressed"]

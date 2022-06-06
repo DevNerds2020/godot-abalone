@@ -1,4 +1,5 @@
 extends Node
+signal clicked(node)
 
 export var pieces_path : NodePath
 onready var pieces = get_node(pieces_path)
@@ -17,39 +18,71 @@ var history = []
 var history_len = 0
 var turn_to_show = 0
 var state_history = state
+var player_moves_len = 0
+var player_state = state
+var player_state_choosed_number = 0
+var possible_player_states = []
 var finished = false
+var playersubmit = false
+var computermove = false
 func _ready():
 	draw_complete_board(BoardManager.current_board)
 	var first_board = BoardManager.current_board
 	state = State.new(first_board, 0,0)
 	turn = 1
 
+
+#func _process(delta):
+#	if not finished:
+#		transposition.append(state.board)
+#		state = min_max_search(state, 2, turn)
+#		update_board(state.board)
+#		turn = 3 - turn 
+#		history.append(state)
+#		state_history = state
+#	if state.white_score == 6 or state.black_score == 6 or finished:
+#		if not finished: 
+#			history_len = len(history)
+#			turn_to_show = history_len
+#		update_board(state_history.board)
+#		finished = true
 func _process(delta):
 	if not finished:
-		transposition.append(state.board)
-		state = min_max_search(state, 2, turn)
-		update_board(state.board)
-		turn = 3 - turn 
-		history.append(state)
-		state_history = state
+		if turn == 2:
+			transposition.append(state.board)
+			state = min_max_search(state, 2, turn)
+			update_board(state.board)
+			turn = 3 - turn 
+			history.append(state)
+			state_history = state
+		if turn == 1:
+			if not computermove:
+				if playersubmit:
+					player_state_choosed_number = 0
+					possible_player_states = Successor.calculate_successor(state, turn)
+					player_moves_len == len(possible_player_states)
+					history.append(state)
+					state_history = state
+					playersubmit = false
+				yield(self, "playermove")
+				state = player_state
+				update_board(state.board)
+			if computermove:
+				transposition.append(state.board)
+				state = min_max_search(state, 2, turn)
+				update_board(state.board)
+				turn = 3 - turn 
+				history.append(state)
+				state_history = state
+				computermove = false
+#		yield(self, "playersubmit")
 	if state.white_score == 6 or state.black_score == 6 or finished:
 		if not finished: 
 			history_len = len(history)
 			turn_to_show = history_len
 		update_board(state_history.board)
 		finished = true
-		
-#	if state.white_score == 6 or state.black_score == 6:
-#		var last_button = Button.new()
-#		var next_button = Button.new()
-#		last_button.text = "last"
-#		next_button.text = "next"
-#		last_button.ALIGN_LEFT
-#		next_button.ALIGN_CENTER
-#		last_button.connect("pressed", self, "_last_button_pressed")
-#		next_button.connect("pressed", self, "_next_button_pressed")
-#		add_child(last_button)
-#		add_child(next_button)
+signal playermove
 func _input(ev):
 	if ev is InputEventKey and ev.scancode == KEY_RIGHT and finished:
 		if turn_to_show < history_len-1:
@@ -61,6 +94,19 @@ func _input(ev):
 			turn_to_show -= 1
 			state_history = history[turn_to_show]
 			set_process(true)
+	if ev is InputEventKey and ev.scancode == KEY_D and not finished:
+		player_state_choosed_number += 1
+		player_state =  possible_player_states[player_state_choosed_number]
+		set_process(true)
+		emit_signal("playermove")
+	if ev is InputEventKey and ev.scancode == KEY_A and not finished:
+		player_state_choosed_number -= 1
+		player_state =  possible_player_states[player_state_choosed_number]
+		set_process(true)
+		emit_signal("playermove")
+	if ev is InputEventKey and ev.scancode == KEY_ENTER and not finished:
+		emit_signal("playersubmit")
+	
 func get_heuristic(piece, board):
 	var result = 0
 	var pieces = get_pieces(piece, board)
@@ -113,6 +159,7 @@ func transposition_table(moves):
 			continue
 		filtered_moves.append(move)
 	return filtered_moves
+#beam search 
 func delete_stupid_moves(moves, current_state, turn):
 	var smart_moves = []
 	for move in moves:
@@ -214,3 +261,13 @@ func get_3d_coordinates(cell_number):
 	else:
 		return Vector3(-0.6 + (cell_number - 56) * 0.3, 0.01, 1.04)
 	
+
+
+func _on_Button_pressed():
+	playersubmit = true
+	turn = 3 - turn 
+	set_process(true)
+
+
+func _on_Button2_pressed():
+	computermove = true
